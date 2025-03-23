@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[Global] TicTacToe | Home</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; margin: 20px auto; width: max-content; }
+        .cell { width: 100px; height: 100px; font-size: 2em; display: flex; align-items: center; justify-content: center; border: 2px solid black; cursor: pointer; }
+        #status { font-size: 1.5em; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div id="status">Connecting...</div>
+    <div class="board" id="board"></div>
+
+    <script>
+        const socket = io("http://localhost:3000"); // Change this when deploying online
+        let playerType = "";
+        let currentTurn = "X";
+
+        socket.on("playerType", (type) => {
+            playerType = type;
+            document.getElementById("status").textContent = `You are Player ${playerType}`;
+        });
+
+        socket.on("full", () => {
+            document.getElementById("status").textContent = "Game is full! Try again later.";
+        });
+
+        function renderBoard(board) {
+            const boardDiv = document.getElementById("board");
+            boardDiv.innerHTML = "";
+            board.forEach((cell, index) => {
+                const cellDiv = document.createElement("div");
+                cellDiv.classList.add("cell");
+                cellDiv.textContent = cell;
+                cellDiv.onclick = () => makeMove(index);
+                boardDiv.appendChild(cellDiv);
+            });
+        }
+
+        function makeMove(index) {
+            if (playerType === currentTurn) {
+                socket.emit("move", index);
+            }
+        }
+
+        socket.on("updateBoard", (board, turn) => {
+            renderBoard(board);
+            currentTurn = turn;
+            document.getElementById("status").textContent = `Player ${currentTurn}'s turn`;
+        });
+
+        socket.on("resetGame", () => {
+            document.getElementById("status").textContent = "Opponent left. Restarting...";
+        });
+    </script>
+</body>
+</html>
